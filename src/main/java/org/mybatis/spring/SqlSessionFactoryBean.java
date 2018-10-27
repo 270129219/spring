@@ -15,18 +15,6 @@
  */
 package org.mybatis.spring;
 
-import static org.springframework.util.Assert.notNull;
-import static org.springframework.util.Assert.state;
-import static org.springframework.util.ObjectUtils.isEmpty;
-import static org.springframework.util.StringUtils.hasLength;
-import static org.springframework.util.StringUtils.tokenizeToStringArray;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Properties;
-
-import javax.sql.DataSource;
-
 import org.apache.ibatis.builder.xml.XMLConfigBuilder;
 import org.apache.ibatis.builder.xml.XMLMapperBuilder;
 import org.apache.ibatis.cache.Cache;
@@ -55,6 +43,17 @@ import org.springframework.core.NestedIOException;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Properties;
+
+import static org.springframework.util.Assert.notNull;
+import static org.springframework.util.Assert.state;
+import static org.springframework.util.ObjectUtils.isEmpty;
+import static org.springframework.util.StringUtils.hasLength;
+import static org.springframework.util.StringUtils.tokenizeToStringArray;
+
 /**
  * {@code FactoryBean} that creates an MyBatis {@code SqlSessionFactory}.
  * This is the usual way to set up a shared MyBatis {@code SqlSessionFactory} in a Spring application context;
@@ -63,6 +62,19 @@ import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
  * Either {@code DataSourceTransactionManager} or {@code JtaTransactionManager} can be used for transaction
  * demarcation in combination with a {@code SqlSessionFactory}. JTA should be used for transactions
  * which span multiple databases or when container managed transactions (CMT) are being used.
+ *
+ *
+ * SqlSessionFactoryBean这个类实现了三个接口，一是InitializingBean，另一是FactoryBean，
+ * 还有就是ApplicationListener接口。下面说明一下实现了这三个接口的，有什么作用
+ *
+ * InitializingBean接口：实现了这个接口，那么当bean初始化的时候，spring就会调用该接口的实现类的
+ *                      afterPropertiesSet方法，去实现当spring初始化该Bean 的时候所需要的逻辑。
+ *
+ * FactoryBean接口：实现了该接口的类，在调用getBean的时候会返回该工厂返回的实例对象，
+ *                  也就是再调一次getObject方法返回工厂的实例。
+ *
+ * ApplicationListener接口：实现了该接口，如果注册了该监听的话，那么就可以了监听到Spring的一些事件，
+ *                        然后做相应的处理.
  *
  * @author Putthiphong Boonphong
  * @author Hunter Presnall
@@ -403,6 +415,10 @@ public class SqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>, In
     state((configuration == null && configLocation == null) || !(configuration != null && configLocation != null),
               "Property 'configuration' and 'configLocation' can not specified with together");
 
+    //SqlSessionFactoryBean 类实现了 InitializingBean 接口，所以会在 SqlSessionFactoryBean 工程类实例创建完成后,
+    //执行 afterPropertiesSet 方法;在 afterPropertiesSet 方法中会执行 buildSqlSessionFactory 方法,
+    //生成一个 sqlSessionFactory 对象，用于 getObject() 方法返回 SqlSessionFactory ; SqlSessionFactrory 的创建
+    //是通过解析XML文件,同时注入 Spring 的 DataSource 创建 Conguration 实例；
     this.sqlSessionFactory = buildSqlSessionFactory();
   }
 

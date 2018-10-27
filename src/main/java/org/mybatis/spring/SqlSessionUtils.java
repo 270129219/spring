@@ -74,6 +74,20 @@ public final class SqlSessionUtils {
    * Then, it synchronizes the SqlSession with the transaction if Spring TX is active and
    * <code>SpringManagedTransactionFactory</code> is configured as a transaction manager.
    *
+   * <p>
+   * MyBatis与Spring集成后默认将事务托管给Spring，如果Spring未开启事务管理则MyBatis也不会进行事务管理；
+   * MyBatis不进行事务的原理是每次增删查改数据库操作都创建一个sqlSession实例，数据库操作完成后会立即进行提交，
+   * 这样就变成了无事务操作；
+   *
+   *    <p>
+   *    MyBatis与Spring集成后的事务问题主要变现在是否将线程绑定的Connection注入到TransactionSynchronizetionManager中:
+   *      <p>
+   *      1、MyBatis与Spring集成并且Spring开启事务使用@Transaction，会在事务代理类中将线程绑定的Connection连接注入
+   *      TransactionSynchronizetionManager中，根据TransactionSynchronizetionManager可以获取与线程绑定的sqlSession。
+   *      <p>
+   *      2、MyBatis与Spring集成并且Spring未开启事务，则从TransactionSynchronizetionManager不能获取与线程绑定的
+   *      sqlSession，每次执行数据库操作时都会通过sessionFactory.openSession()方法冲重新创建sqlSession；
+   *
    * @param sessionFactory a MyBatis {@code SqlSessionFactory} to create new sessions
    * @param executorType The executor type of the SqlSession to create
    * @param exceptionTranslator Optional. Translates SqlSession.commit() exceptions to Spring exceptions.
@@ -86,7 +100,9 @@ public final class SqlSessionUtils {
 
     notNull(sessionFactory, NO_SQL_SESSION_FACTORY_SPECIFIED);
     notNull(executorType, NO_EXECUTOR_TYPE_SPECIFIED);
-
+    //在动态代理类内如果Spring开启了事务,则通过 TransactionSynchronizationManager 内部的 ThreadLocal 实现
+    //保证了非线程安全的sqlSession的线程安全实现；如果Spring未开启事务,则 TransactionSynchronizationManager 内部为空，
+    //每次都会创建一个SqlSession实例，增删查改执行完成后进行事务提交；
     SqlSessionHolder holder = (SqlSessionHolder) TransactionSynchronizationManager.getResource(sessionFactory);
 
     SqlSession session = sessionHolder(executorType, holder);

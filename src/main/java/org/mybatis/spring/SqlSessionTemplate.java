@@ -126,6 +126,9 @@ public class SqlSessionTemplate implements SqlSession, DisposableBean {
   public SqlSessionTemplate(SqlSessionFactory sqlSessionFactory, ExecutorType executorType,
       PersistenceExceptionTranslator exceptionTranslator) {
 
+    //每个Mapper类都有一个单例的SqlSessionTemplate类型的sqlSession用来管理线程不安全的SqlSession，
+    //底层通过ThreadLocal实现；SqlSessionTemplate执行具体的数据库操作是通过内部的代理类SqlSessionProxy实现
+
     notNull(sqlSessionFactory, "Property 'sqlSessionFactory' is required");
     notNull(executorType, "Property 'executorType' is required");
 
@@ -425,6 +428,8 @@ public class SqlSessionTemplate implements SqlSession, DisposableBean {
   private class SqlSessionInterceptor implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      //SqlSessionProxy是通过JDK动态代理实现的类，在执行具体的数据库操作之前会尝试获取与该线程绑定的sqlSession，
+      //如果没有绑定则从新创建，如果已经绑定则直接使用；
       SqlSession sqlSession = getSqlSession(
           SqlSessionTemplate.this.sqlSessionFactory,
           SqlSessionTemplate.this.executorType,

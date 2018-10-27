@@ -45,6 +45,10 @@ public abstract class SqlSessionDaoSupport extends DaoSupport {
    * Set MyBatis SqlSessionFactory to be used by this DAO.
    * Will automatically create SqlSessionTemplate for the given SqlSessionFactory.
    *
+   * 每一个Dao层Mapper类都在Spring容器内实例化一MapperFactoryBean，MapperFactoryBean继承自
+   * SqlSessionDaoSupport，需要通过 setSqlSessionFactory() 方法注入 SqlSessionFactory 用来创建
+   * 会话 SqlSessionTemplate 类型的 SqlSession
+   *
    * @param sqlSessionFactory a factory of SqlSession
    */
   public void setSqlSessionFactory(SqlSessionFactory sqlSessionFactory) {

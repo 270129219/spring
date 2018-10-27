@@ -174,10 +174,13 @@ public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
       // the mapper interface is the original class of the bean
       // but, the actual class of the bean is MapperFactoryBean
       definition.getConstructorArgumentValues().addGenericArgumentValue(beanClassName); // issue #59
+      //实际就是将扫描到的接口包装成MapperFactoryBean的实现类
       definition.setBeanClass(this.mapperFactoryBean.getClass());
 
       definition.getPropertyValues().add("addToConfig", this.addToConfig);
 
+      //注入sqlSessionFactory对象,spring容器会通过AUTOWIRE_BY_TYPE方式,
+      //调用MapperFactoryBean.setSqlSessionFactory(SqlSessionFactory sqlSessionFactory)方法,自动注入.
       boolean explicitFactoryUsed = false;
       if (StringUtils.hasText(this.sqlSessionFactoryBeanName)) {
         definition.getPropertyValues().add("sqlSessionFactory", new RuntimeBeanReference(this.sqlSessionFactoryBeanName));
@@ -186,6 +189,10 @@ public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
         definition.getPropertyValues().add("sqlSessionFactory", this.sqlSessionFactory);
         explicitFactoryUsed = true;
       }
+
+      //创建完成MapperFactoryBean后会在容器实例化时候调用getObject()方法进行实例化，对Mapper类会通过JDK动态代理
+      //生成实现类实例放入容器中；调用实现类实例相关方法时，会通过sqlSessionTemplate执行，会先获取到线程绑定的sqlSession后，
+      //再通过SqlSession执行相应的数据库操作；
 
       if (StringUtils.hasText(this.sqlSessionTemplateBeanName)) {
         if (explicitFactoryUsed) {

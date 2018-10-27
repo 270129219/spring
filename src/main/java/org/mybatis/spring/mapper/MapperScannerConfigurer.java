@@ -295,7 +295,25 @@ public class MapperScannerConfigurer implements BeanDefinitionRegistryPostProces
 
   /**
    * {@inheritDoc}
-   * 
+   *
+   *
+   * MapperScannerConfigurer 对象的初始化过程，这个对象实现了 BeanDefinitionRegistryPostProcessor 接口，
+   * 实现了该接口后,在 ApplicationContext 初始化扫描 applicationContext.xml 配置文件注册 BeanDefinition 后,
+   * 执行 postProcessBeanDefinitionRegistry 方法
+   *
+   * MyBatis与Spring集成后的整体逻辑过程是：
+   *
+   *    1、在容器ApplicationContext实例化SqlSessionFactory，注入spring的dataSource实例
+   *
+   *    2、在容器ApplicationContext注册MapperScannerConfigurer扫描配置类后会扫描特定包下的所有Mapper类，
+   *    并将Mapper类包装成MapperFactoryBean注册到容器中(BeanDefinitionName)；
+   *      2.1、在创建MapperFactoryBean时会在其中创建会话SqlSessionTemplate类
+   *    3、在容器applicationContext实例化时会通过getObject()方法创建Mapper类的JDK动态代理类的实例放入容器
+   *
+   *    4、调用时注入Mapper类的JDK动态代理类的实例，调用其相关方法，在动态代理实现类中方法的执行是通过sqlSessionTemplate实现的；
+   *
+   *    5、sqlSessionTemplate执行数据库操作是通过代理类，首先获取线程绑定sqlSession，再通过这个sqlSession执行的；
+   *
    * @since 1.0.2
    */
   @Override
@@ -315,6 +333,9 @@ public class MapperScannerConfigurer implements BeanDefinitionRegistryPostProces
     scanner.setResourceLoader(this.applicationContext);
     scanner.setBeanNameGenerator(this.nameGenerator);
     scanner.registerFilters();
+
+    //在 postProcessBeanDefinitionRegistry 方法中初始化一个对象 ClassPathMapperScanner ，并将执行scan—>doScan方法，
+    //扫描指定包下的所有Mapper类(@Mapper定义或者XML配置)注册到spring容器中，并包装为 MapperFactoryBean
     scanner.scan(StringUtils.tokenizeToStringArray(this.basePackage, ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS));
   }
 
