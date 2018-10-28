@@ -429,6 +429,12 @@ public class SqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>, In
    * {@code SqlSessionFactory} instance based on an Reader.
    * Since 1.3.0, it can be specified a {@link Configuration} instance directly(without config file).
    *
+   *  1、MyBatis的初始化主要是加载解析XML配置文件，根据解析结果创建Configuration对象；将创建好的Configuration对象
+   *     装载生成SqlSessionFactory实例对象；
+   *  2、加载mappers标签过程中，会对每个mapper映射文件创建一个XMLMapperBuilder对象进行解析，在单个mapper映射文件
+   *     解析过程中，会对每个sql操作标签创建一个XMLStatementBuilder对象用于解析,解析每一个sql操作生成对应的MapperStatement
+   *     对象用于后续的操作；
+   *
    * @return SqlSessionFactory
    * @throws IOException if loading the config file failed
    */
@@ -557,6 +563,8 @@ public class SqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>, In
       LOGGER.debug(() -> "Property 'mapperLocations' was not specified or no matching resources found");
     }
 
+    //创建Configuration实例对象装载在DefaultSqlSessionFactory对象中，
+    // 并返回DefaultSqlSessionFactory对象实例用于创建SqlSession；
     return this.sqlSessionFactoryBuilder.build(configuration);
   }
 
